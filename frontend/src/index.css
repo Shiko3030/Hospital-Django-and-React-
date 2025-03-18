@@ -1,0 +1,30 @@
+@import "tailwindcss";
+#nav{
+    color:beige;
+}
+
+#nav:hover{
+    color: #1A56DB;
+}
+
+.w-full{
+    color :rgb(255, 255, 255)
+    
+}
+.px-6{
+    color:beige;
+}
+.px-6:hover{
+    color: #0E9F6E;
+}
+option{
+    color :rgb(0, 0, 0)
+}
+input{
+    background-color: rgb(45, 40, 49);
+}
+
+body{
+    background-color: #E5EDFF
+    ;
+}
