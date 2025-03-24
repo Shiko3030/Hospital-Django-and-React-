@@ -28,3 +28,32 @@ body{
     background-color: #E5EDFF
     ;
 }
+
+#NotFound{
+    color :red;
+}
+
+
+#test{
+    border-radius: 10px;
+    margin: 50px;
+}
+
+#logout{
+    color:#fff;
+}
+#logout:hover{
+    color:#fff;
+    background-color:red;
+    cursor:pointer;
+}
+
+
+#login{
+    color:#fff;
+}
+#login:hover{
+    color:#fff;
+    background-color:green;
+    cursor:pointer;
+}

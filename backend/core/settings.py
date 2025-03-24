@@ -1,4 +1,8 @@
 import os
+from datetime import timedelta
+from pathlib import Path
+
+
 
 from pathlib import Path
 
@@ -28,15 +32,17 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'rest_framework',
+    'djoser',
     'hospital',
     'corsheaders',
+    'users',
 ]
 
 
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:5173",  
 ]
-CORS_ALLOW_ALL_ORIGINS = True
+
 
 
 MIDDLEWARE = [
@@ -74,16 +80,19 @@ WSGI_APPLICATION = 'core.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/5.1/ref/settings/#databases
 
+# settings.py
+
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'hospital',
+        'NAME': 'hospital_test_2',
         'USER': 'postgres',
         'PASSWORD': 'abdo',
-        'HOST': 'localhost',   # Or the IP where your PostgreSQL server is running
-        'PORT': '5432',        # Default PostgreSQL port
+        'HOST': 'localhost',   
+        'PORT': '5432',     
     }
 }
+
 
 
 
@@ -127,3 +136,31 @@ STATIC_URL = 'static/'
 # https://docs.djangoproject.com/en/5.1/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+
+
+
+
+
+
+REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': [
+        'rest_framework_simplejwt.authentication.JWTAuthentication',
+    ],
+    'DEFAULT_PERMISSION_CLASSES': [
+        'rest_framework.permissions.IsAuthenticated',
+    ],  
+}
+
+AUTH_USER_MODEL = 'users.UserAccount'
+
+
+
+SIMPLE_JWT = {
+    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=60),
+    'REFRESH_TOKEN_LIFETIME': timedelta(days=1),
+    'ROTATE_REFRESH_TOKENS': False,
+    'BLACKLIST_AFTER_ROTATION': False,
+    'AUTH_HEADER_TYPES': ('Bearer', ),
+    'AUTH_TOKEN_CLASSES': ('rest_framework_simplejwt.tokens.AccessToken', )
+}

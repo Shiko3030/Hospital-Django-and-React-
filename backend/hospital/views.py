@@ -1,10 +1,9 @@
-from django.shortcuts import render
 from rest_framework.response import Response
 from rest_framework.decorators import api_view
-from .serializers import DepartmentSerializers, EmployeeSerializers, PatientSerializers, AppointmentSerializers, OperationSerializers
+from .serializers import DepartmentSerializers, EmployeeSerializers, PatientSerializers, AppointmentSerializers , HospitalSerializer , JobTypeSerializers
 from rest_framework import status
-from .models import Department ,Employee ,Patient ,Appointment ,Operation
-
+from .models import Department ,Employee ,Patient ,Appointment, JobType ,Hospital
+from django.db.models import Q
 
 
 # ==============================
@@ -12,10 +11,22 @@ from .models import Department ,Employee ,Patient ,Appointment ,Operation
 # ==============================
 @api_view(['GET'])
 def Department_List(request):
+    # الحصول على استعلام البحث من الطلب
+    search_query = request.GET.get('search', '')
+    
+    # جلب جميع الأقسام
     departments = Department.objects.all()
+    
+    # تطبيق الفلترة إذا كان هناك استعلام بحث
+    if search_query:
+        departments = departments.filter(
+            Q(department_name__icontains=search_query) |        # اسم القسم
+            Q(hospital__hospital_name__icontains=search_query)  # اسم المستشفى
+        )
+    
+    # تحويل البيانات إلى JSON
     serializers = DepartmentSerializers(departments, many=True)
     return Response(serializers.data)
-
 
 # ==============================
 #       Get DEPARTMENT
@@ -108,20 +119,40 @@ def Delete_Department(request, pk):
 # ==============================
 @api_view(['GET'])
 def Employee_List(request):
+    # الحصول على استعلام البحث من الطلب
+    search_query = request.GET.get('search', '')
+    
+    # جلب جميع الموظفين
     employees = Employee.objects.all()
+    
+    # تطبيق الفلترة إذا كان هناك استعلام بحث
+    if search_query:
+        employees = employees.filter(
+            Q(first_name__icontains=search_query) |           # الاسم الأول
+            Q(last_name__icontains=search_query) |            # الاسم الأخير
+            Q(specialty__icontains=search_query) |            # التخصص
+            Q(license_number__icontains=search_query) |       # رقم الترخيص
+            Q(job__job_name__icontains=search_query) |        # اسم الوظيفة
+            Q(department__department_name__icontains=search_query) |  # اسم القسم
+            Q(hospital__hospital_name__icontains=search_query)        # اسم المستشفى
+        )
+    
+    # تحويل البيانات إلى JSON
     serializers = EmployeeSerializers(employees, many=True)
     return Response(serializers.data)
-
-
 # ==============================
 #       LIST ALL Doctors
 # ==============================
 @api_view(['GET'])
 def Doctors_List(request):
-    Doctors = Employee.objects.filter(job_type='doctor')
-    serializers = EmployeeSerializers(Doctors, many=True)
-    return Response(serializers.data)
-
+    try:
+        # فلتر الأطباء بناءً على job_name داخل JobType
+        doctors = Employee.objects.filter(job__job_name__iexact='doctor')
+        serializer = EmployeeSerializers(doctors, many=True)
+        return Response(serializer.data)
+    except Employee.DoesNotExist:
+        return Response({"error": "No doctors found."}, status=status.HTTP_404_NOT_FOUND)
+  
 
 # ==============================
 #       Get Employee
@@ -213,12 +244,34 @@ def Delete_Employee(request, pk):
 # ==============================
 #       LIST ALL Appointments
 # ==============================
+from rest_framework.decorators import api_view
+from rest_framework.response import Response
+
+
 @api_view(['GET'])
 def Appointment_List(request):
+    # الحصول على استعلام البحث من الطلب
+    search_query = request.GET.get('search', '')
+    
+    # جلب جميع المواعيد
     appointments = Appointment.objects.all()
+    
+    # تطبيق الفلترة إذا كان هناك استعلام بحث
+    if search_query:
+        appointments = appointments.filter(
+            Q(patient__first_name__icontains=search_query) |  # اسم المريض الأول
+            Q(patient__last_name__icontains=search_query) |   # اسم المريض الأخير
+            Q(doctor__first_name__icontains=search_query) |   # اسم الطبيب الأول
+            Q(doctor__last_name__icontains=search_query) |    # اسم الطبيب الأخير
+            Q(department__department_name__icontains=search_query) |  # اسم القسم
+            Q(hospital__hospital_name__icontains=search_query) |      # اسم المستشفى
+            Q(appointment_date__icontains=search_query) |             # تاريخ الموعد
+            Q(status__icontains=search_query)                         # الحالة
+        )
+    
+    # تحويل البيانات إلى JSON
     serializers = AppointmentSerializers(appointments, many=True)
     return Response(serializers.data)
-
 
 # ==============================
 #       Get Appointment
@@ -311,10 +364,27 @@ def Delete_Appointment(request, pk):
 # ==============================
 @api_view(['GET'])
 def Patient_List(request):
-    patientes = Patient.objects.all()
-    serializers = PatientSerializers(patientes, many=True)
+    # الحصول على استعلام البحث من الطلب
+    search_query = request.GET.get('search', '')
+    
+    # جلب جميع المرضى
+    patients = Patient.objects.all()
+    
+    # تطبيق الفلترة إذا كان هناك استعلام بحث
+    if search_query:
+        patients = patients.filter(
+            Q(first_name__icontains=search_query) |          # الاسم الأول
+            Q(last_name__icontains=search_query) |           # الاسم الأخير
+            Q(gender__icontains=search_query) |              # الجنس
+            Q(date_of_birth__icontains=search_query) |       # تاريخ الميلاد (كسلسلة نصية)
+            Q(phone_number__icontains=search_query) |        # رقم الهاتف
+            Q(email__icontains=search_query) |               # البريد الإلكتروني
+            Q(hospital__hospital_name__icontains=search_query)  # اسم المستشفى
+        )
+    
+    # تحويل البيانات إلى JSON
+    serializers = PatientSerializers(patients, many=True)
     return Response(serializers.data)
-
 # ==============================
 #       Get Patient
 # ==============================
@@ -394,47 +464,52 @@ def Delete_Patient(request, pk):
             status=status.HTTP_404_NOT_FOUND
         )
 
-
 ########################################################################################################################
-
-
 # ==============================
-#       LIST ALL Operation
+#       LIST ALL typejope
 # ==============================
 @api_view(['GET'])
-def Operation_List(request):
-    operationes = Operation.objects.all()
-    serializers = OperationSerializers(operationes, many=True)
+def JobType_List(request):
+    # الحصول على استعلام البحث من الطلب
+    search_query = request.GET.get('search', '')
+    
+    # جلب جميع أنواع الوظائف
+    job_types = JobType.objects.all()
+    
+    # تطبيق الفلترة إذا كان هناك استعلام بحث
+    if search_query:
+        job_types = job_types.filter(
+            Q(job_name__icontains=search_query)  # البحث في اسم الوظيفة
+        )
+    
+    # تحويل البيانات إلى JSON
+    serializers = JobTypeSerializers(job_types, many=True)
     return Response(serializers.data)
-
 # ==============================
-#       Get Operation
+#       Get typejope
 # ==============================
 @api_view(['GET'])
-def Operation_Get(request,pk):
+def JobType_Get(request,pk):
     try :
-        operation = Operation.objects.get(id=pk)
-        serializers = OperationSerializers(operation)
+        typejopes = JobType.objects.get(id=pk)
+        serializers = JobTypeSerializers(typejopes)
         return Response(serializers.data)
-    except Operation.DoesNotExist:
+    except JobType.DoesNotExist:
         return Response(
-            {'error': 'Operation not found!'},
+            {'error': 'typejope not found!'},
             status=status.HTTP_404_NOT_FOUND
         )
-
-
-
 # ==============================
-#        CREATE Operation
+#        CREATE typejope
 # ==============================
 @api_view(['POST'])
-def Create_Operation(request):
-    serializer = OperationSerializers(data=request.data)
+def Create_JobType(request):
+    serializer = JobTypeSerializers(data=request.data)
     
     if serializer.is_valid():
         serializer.save()
         return Response(
-            {'success': 'Operation created successfully!'},
+            {'success': 'typejope created successfully!'},
             status=status.HTTP_201_CREATED
         )
     
@@ -442,25 +517,24 @@ def Create_Operation(request):
         serializer.errors,
         status=status.HTTP_400_BAD_REQUEST
     )
-
 # ==============================
-#        UPDATE Operation
+#        UPDATE typejope
 # ==============================
 @api_view(['PUT', 'PATCH'])
-def Update_Operation(request, pk):
+def Update_JobType(request, pk):
     try:
-        operationes = Operation.objects.get(id=pk)
-    except Operation.DoesNotExist:
+        typejopes = JobType.objects.get(id=pk)
+    except JobType.DoesNotExist:
         return Response(
-            {'error': 'Operation not found!'},
+            {'error': 'JobType not found!'},
             status=status.HTTP_404_NOT_FOUND
         )
     
-    serializer = OperationSerializers(operationes, data=request.data, partial=True)  # `partial=True` للسماح بتحديث جزئي
+    serializer = JobTypeSerializers(typejopes, data=request.data, partial=True)  # `partial=True` للسماح بتحديث جزئي
     if serializer.is_valid():
         serializer.save()
         return Response(
-            {'success': 'operationes updated successfully!'},
+            {'success': 'JobType updated successfully!'},
             status=status.HTTP_200_OK
         )
 
@@ -470,19 +544,121 @@ def Update_Operation(request, pk):
     )
 
 # ==============================
-#        DELETE Operation
+#        DELETE JobTypes
 # ==============================
 @api_view(['DELETE'])
-def Delete_Operation(request, pk):
+def Delete_JobType(request, pk):
     try:
-        operationes = Operation.objects.get(id=pk)
-        operationes.delete()
+        jobtypes = JobType.objects.get(id=pk)
+        jobtypes.delete()
         return Response(
-            {'success': 'operationes deleted successfully!'},
+            {'success': 'JobTypes deleted successfully!'},
             status=status.HTTP_204_NO_CONTENT
         )
-    except Operation.DoesNotExist:
+    except JobType.DoesNotExist:
         return Response(
-            {'error': 'Operation not found!'},
+            {'error': 'JobType not found!'},
+            status=status.HTTP_404_NOT_FOUND
+        )
+
+# ==============================
+#       LIST ALL Hospitals
+# ==============================
+@api_view(['GET'])
+def Hospital_List(request):
+    # الحصول على استعلام البحث من الطلب
+    search_query = request.GET.get('search', '')
+    
+    # جلب جميع المستشفيات
+    hospitals = Hospital.objects.all()
+    
+    # تطبيق الفلترة إذا كان هناك استعلام بحث
+    if search_query:
+        hospitals = hospitals.filter(
+            Q(hospital_name__icontains=search_query) |
+            Q(address__icontains=search_query) |
+            Q(phone_number__icontains=search_query) |
+            Q(email__icontains=search_query)
+        )
+    
+    # تحويل البيانات إلى JSON
+    serializers = HospitalSerializer(hospitals, many=True)
+    return Response(serializers.data)
+
+# ==============================
+#       Get Hospital
+# ==============================
+@api_view(['GET'])
+def Hospital_Get(request, pk):
+    try:
+        hospital = Hospital.objects.get(id=pk)
+        serializer = HospitalSerializer(hospital)
+        return Response(serializer.data)
+    except Hospital.DoesNotExist:
+        return Response(
+            {'error': 'Hospital not found!'},
+            status=status.HTTP_404_NOT_FOUND
+        )
+
+# ==============================
+#        CREATE Hospital
+# ==============================
+@api_view(['POST'])
+def Create_Hospital(request):
+    serializer = HospitalSerializer(data=request.data)
+    
+    if serializer.is_valid():
+        serializer.save()
+        return Response(
+            {'success': 'Hospital created successfully!'},
+            status=status.HTTP_201_CREATED
+        )
+
+    return Response(
+        serializer.errors,
+        status=status.HTTP_400_BAD_REQUEST
+    )
+
+# ==============================
+#        UPDATE Hospital
+# ==============================
+@api_view(['PUT', 'PATCH'])
+def Update_Hospital(request, pk):
+    try:
+        hospital = Hospital.objects.get(id=pk)
+    except Hospital.DoesNotExist:
+        return Response(
+            {'error': 'Hospital not found!'},
+            status=status.HTTP_404_NOT_FOUND
+        )
+
+    serializer = HospitalSerializer(hospital, data=request.data, partial=True)
+    if serializer.is_valid():
+        serializer.save()
+        return Response(
+            {'success': 'Hospital updated successfully!'},
+            status=status.HTTP_200_OK
+        )
+
+    return Response(
+        serializer.errors,
+        status=status.HTTP_400_BAD_REQUEST
+    )
+
+# ==============================
+#        DELETE Hospital
+# ==============================
+@api_view(['DELETE'])
+def Delete_Hospital(request, pk):
+    try:
+        hospital = Hospital.objects.get(id=pk)
+        hospital.delete()
+        return Response(
+            {'success': 'Hospital deleted successfully!'},
+            status=status.HTTP_204_NO_CONTENT
+        )
+    except Hospital.DoesNotExist:
+        return Response(
+            {'error': 'Hospital not found!'},
             status=status.HTTP_404_NOT_FOUND
         )

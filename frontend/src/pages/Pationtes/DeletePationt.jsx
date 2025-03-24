@@ -12,7 +12,7 @@ export default function DeletePatient() {
                 toast.success("Pationte Deleted Successfully ! 🎉");
 
                 setTimeout(() => {
-                    navigate('/pationte');
+                    navigate('/patient');
                 }, 4000);
             } catch (error) {
                 console.error('Error deleting patient:', error);

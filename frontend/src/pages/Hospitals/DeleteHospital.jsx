@@ -2,32 +2,32 @@ import axios from 'axios';
 import { useNavigate, useParams } from 'react-router-dom';
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-export default function DeleteOperation() {
+
+export default function DeleteHospital() {
     const { id } = useParams();
     const navigate = useNavigate();
 
     const handleDelete = async () => {
-            try {
-                await axios.delete(`http://127.0.0.1:8000/api/operation/${id}/delete/`);
-                toast.success("Operation Deleted Successfully ! 🎉");
-
-                setTimeout(() => {
-                    navigate('/operation');
-                }, 4000);
-            }        
-             catch (error) {
-                console.error('Error deleting operation:', error);
-                alert('Failed to delete operation. Please try again.');
-            }
+        try {
+            await axios.delete(`http://127.0.0.1:8000/api/hospitals/${id}/delete/`);
+            toast.success("Hospital Deleted Successfully! 🎉");
+            
+            setTimeout(() => {
+                navigate('/hospitals');
+            }, 4000);
+        } catch (error) {
+            console.error('Error deleting hospital:', error);
+            alert('Failed to delete hospital. Please try again.');
+        }
     };
 
     return (
         <div style={{ padding: '20px', textAlign: 'center' }}>
-              <ToastContainer />
+            <ToastContainer />
             <h1 style={{ fontSize: '24px', fontWeight: 'bold', marginBottom: '16px' }}>
-                Delete Operation
+                Delete Hospital
             </h1>
-            <p>Are you sure you want to delete this operation?</p>
+            <p>Are you sure you want to delete this hospital?</p>
             <div style={{ marginTop: '20px' }}>
                 <button
                     onClick={handleDelete}
@@ -36,7 +36,7 @@ export default function DeleteOperation() {
                     Yes, Delete
                 </button>
                 <button
-                    onClick={() => navigate('/operations')}
+                    onClick={() => navigate('/hospitals')}
                     style={{ backgroundColor: 'gray', color: 'white', padding: '10px 20px' }}
                 >
                     Cancel

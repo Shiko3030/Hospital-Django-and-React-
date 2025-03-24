@@ -1,28 +1,37 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+
 export default function CreateDepartment() {
-    const [name, setName] = useState('');
-    const [bedCount, setBedCount] = useState(0);
+    const [departmentName, setDepartmentName] = useState('');
+    const [hospital, setHospital] = useState('');
+    const [hospitals, setHospitals] = useState([]);
     const navigate = useNavigate();
+
+    useEffect(() => {
+        axios.get('http://127.0.0.1:8000/api/hospitals/')
+            .then(response => setHospitals(response.data))
+            .catch(error => console.error('Error fetching hospitals:', error));
+    }, []);
 
     const handleSubmit = async (e) => {
         e.preventDefault();
         try {
-            await axios.post('http://127.0.0.1:8000/api/departments/create/', { name, bed_count: bedCount });
-            toast.success("Appointment Created Successfully ! 🎉");
-
+            await axios.post('http://127.0.0.1:8000/api/departments/create/', { 
+                department_name: departmentName,
+                hospital
+            });
+            toast.success("Department Created Successfully! 🎉");
+            setDepartmentName('');
+            setHospital('');
             setTimeout(() => {
                 navigate('/departments');
             }, 4000);
-        }        
-        
-        
-        catch (error) {
-            console.error('Error creating department:', error);
-            alert('Failed to create department. Please try again.');
+        } catch (error) {
+            console.error('Error creating department:', error.response?.data || error.message);
+            toast.error(`Failed to create department: ${error.response?.status || 'Unknown error'}`);
         }
     };
 
@@ -38,25 +47,28 @@ export default function CreateDepartment() {
                         <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Create Department</h2>
                         <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
                             <div>
-                                <label className="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Name</label>
+                                <label className="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Department Name</label>
                                 <input
                                     type="text"
-                                    value={name}
-                                    onChange={(e) => setName(e.target.value)}
+                                    value={departmentName}
+                                    onChange={(e) => setDepartmentName(e.target.value)}
                                     required
                                     className="w-full p-2 border rounded-lg"
                                 />
                             </div>
                             <div>
-                                <label className="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Bed Count</label>
-                                <input
-                                    type="number"
-                                    value={bedCount}
-                                    onChange={(e) => setBedCount(Number(e.target.value))}
-                                    min="0"
+                                <label className="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Hospital</label>
+                                <select
+                                    value={hospital}
+                                    onChange={(e) => setHospital(e.target.value)}
                                     required
                                     className="w-full p-2 border rounded-lg"
-                                />
+                                >
+                                    <option value="">Select a hospital</option>
+                                    {hospitals.map(h => (
+                                        <option key={h.id} value={h.id}>{h.hospital_name}</option>
+                                    ))}
+                                </select>
                             </div>
                             <button
                                 type="submit"

@@ -3,26 +3,20 @@ import axios from 'axios';
 import { useNavigate, useParams } from 'react-router-dom';
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+
 export default function EditAppointment() {
     const { id } = useParams();
     const [patients, setPatients] = useState([]);
     const [departments, setDepartments] = useState([]);
     const [doctors, setDoctors] = useState([]);
+    const [hospitals, setHospitals] = useState([]);
     const [patient, setPatient] = useState('');
     const [doctor, setDoctor] = useState('');
+    const [hospital, setHospital] = useState('');
     const [department, setDepartment] = useState('');
-    const [appointmentType, setAppointmentType] = useState('');
     const [appointmentDate, setAppointmentDate] = useState('');
-    const [status, setStatus] = useState('');
+    const [status, setStatus] = useState('confirmed'); // Default to 'confirmed'
     const navigate = useNavigate();
-    const [errorMessage, setErrorMessage] = useState(""); // Make sure this is declared
-
-    const APPOINTMENT_TYPES = [
-        { value: 'general', label: 'General Checkup' },
-        { value: 'cardiology', label: 'Cardiology' },
-        { value: 'orthopedics', label: 'Orthopedics' },
-        { value: 'neurology', label: 'Neurology' }
-    ];
 
     const STATUS_CHOICES = [
         { value: 'confirmed', label: 'Confirmed' },
@@ -30,84 +24,67 @@ export default function EditAppointment() {
         { value: 'completed', label: 'Completed' }
     ];
 
+    // Function to format ISO date for datetime-local input
     const formatDateForInput = (isoDate) => {
         if (!isoDate) return '';
-        return isoDate.split('T')[0]; // تحويل التاريخ إلى yyyy-MM-dd
+        return isoDate.replace('Z', '');
     };
 
     useEffect(() => {
+        // Fetch patients
         axios.get('http://127.0.0.1:8000/api/patient/')
             .then(response => setPatients(response.data))
             .catch(error => console.error('Error fetching patients:', error));
 
+        // Fetch hospitals
+        axios.get('http://127.0.0.1:8000/api/hospitals/')
+            .then(response => setHospitals(response.data))
+            .catch(error => console.error('Error fetching hospitals:', error));
+
+        // Fetch departments
         axios.get('http://127.0.0.1:8000/api/departments/')
             .then(response => setDepartments(response.data))
             .catch(error => console.error('Error fetching departments:', error));
 
+        // Fetch doctors
         axios.get('http://127.0.0.1:8000/api/doctors/')
             .then(response => setDoctors(response.data))
             .catch(error => console.error('Error fetching doctors:', error));
 
+        // Fetch existing appointment details
         axios.get(`http://127.0.0.1:8000/api/appointment/${id}`)
             .then(response => {
                 const data = response.data;
                 console.log('Fetched appointment data:', data);
                 setPatient(data.patient || '');
                 setDoctor(data.doctor || '');
+                setHospital(data.hospital || '');
                 setDepartment(data.department || '');
-                setAppointmentType(data.appointment_type || '');
                 setAppointmentDate(formatDateForInput(data.appointment_date));
-                setStatus(data.status || '');
+                setStatus(data.status || 'confirmed');
             })
             .catch(error => console.error('Error fetching appointment details:', error));
     }, [id]);
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        const payload = {
-            patient: parseInt(patient),
-            doctor: parseInt(doctor),
-            department: parseInt(department),
-            appointment_type: appointmentType,
-            appointment_date: appointmentDate ? `${appointmentDate}T00:00:00Z` : appointmentDate, // تحويل التاريخ إلى ISO 8601
-            status
-        };
         try {
-            const response = await axios.put(`http://127.0.0.1:8000/api/appointment/${id}/update/`, payload);
-            console.log('Response from server:', response.data);{
-                toast.success("Appointment Updated Successfully ! 🎉");
+            await axios.put(`http://127.0.0.1:8000/api/appointment/${id}/update/`, {
+                patient,
+                doctor,
+                hospital,
+                department,
+                appointment_date: appointmentDate,
+                status
+            });
 
+            toast.success("Appointment Updated Successfully! 🎉");
             setTimeout(() => {
-                navigate('/appointment');s
+                navigate('/appointment'); // Consistent navigation with CreateAppointment
             }, 4000);
-            }
-            
         } catch (error) {
-            console.log("Full error response:", error.response?.data);
-    
-            if (error.response && error.response.data) {
-                const errors = error.response.data;
-                let errorText = "";
-    
-                // Handle case where error is a dictionary with multiple fields
-                if (typeof errors === "object") {
-                    for (let key in errors) {
-                        if (Array.isArray(errors[key])) {
-                            errorText += `${key}: ${errors[key].join(", ")}\n`;
-                        } else {
-                            errorText += `${errors[key]}\n`;  // Handle string errors like "detail"
-                        }
-                    }
-                } else {
-                    errorText = "Update failed! Please try again.";
-                    toast.error("Failed to create appointment. Please try again.")
-                }
-    
-                setErrorMessage(errorText.trim()); // Show error messages
-            } else {
-                setErrorMessage("Update failed! Please try again.");
-                toast.error("Failed to create appointment. Please try again.")
-            }
+            console.error('Error updating appointment:', error);
+            toast.error("Failed to update appointment. Please try again.");
         }
     };
 
@@ -116,18 +93,26 @@ export default function EditAppointment() {
             <div className="py-8 px-4 mx-auto max-w-screen-xl lg:py-16 grid lg:grid-cols-2 gap-8 lg:gap-16">
                 <div className="flex flex-col justify-center">
                     <img className="h-auto max-w-full" src="/photo_1.jpg" alt="Appointment illustration" />
-                    <ToastContainer />
                 </div>
                 <div>
                     <div className="w-full lg:max-w-xl p-6 space-y-8 sm:p-8 bg-white rounded-lg shadow-xl dark:bg-gray-800">
-                          
-                            {errorMessage && (
-                                        <div className='err'>
-                                            {errorMessage}
-                                        </div>
-                                    )}
+                        <ToastContainer />
                         <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Edit Appointment</h2>
                         <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
+                            <div>
+                                <label className="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Hospital</label>
+                                <select
+                                    value={hospital}
+                                    onChange={(e) => setHospital(e.target.value)}
+                                    required
+                                    className="w-full p-2 border rounded-lg"
+                                >
+                                    <option value="">Select a hospital</option>
+                                    {hospitals.map(h => (
+                                        <option key={h.id} value={h.id}>{h.hospital_name}</option>
+                                    ))}
+                                </select>
+                            </div>
                             <div>
                                 <label className="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Patient</label>
                                 <select
@@ -138,7 +123,7 @@ export default function EditAppointment() {
                                 >
                                     <option value="">Select a patient</option>
                                     {patients.map(p => (
-                                        <option key={p.id} value={p.id}>{p.name}</option>
+                                        <option key={p.id} value={p.id}>{p.patient_name}</option>
                                     ))}
                                 </select>
                             </div>
@@ -152,7 +137,7 @@ export default function EditAppointment() {
                                 >
                                     <option value="">Select a doctor</option>
                                     {doctors.map(d => (
-                                        <option key={d.id} value={d.id}>{d.name}</option>
+                                        <option key={d.id} value={d.id}>{`${d.first_name} ${d.last_name}`}</option>
                                     ))}
                                 </select>
                             </div>
@@ -166,28 +151,14 @@ export default function EditAppointment() {
                                 >
                                     <option value="">Select a department</option>
                                     {departments.map(d => (
-                                        <option key={d.id} value={d.id}>{d.name}</option>
-                                    ))}
-                                </select>
-                            </div>
-                            <div>
-                                <label className="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Appointment Type</label>
-                                <select
-                                    value={appointmentType}
-                                    onChange={(e) => setAppointmentType(e.target.value)}
-                                    required
-                                    className="w-full p-2 border rounded-lg"
-                                >
-                                    <option value="">Select an appointment type</option>
-                                    {APPOINTMENT_TYPES.map(type => (
-                                        <option key={type.value} value={type.value}>{type.label}</option>
+                                        <option key={d.id} value={d.id}>{d.department_name}</option>
                                     ))}
                                 </select>
                             </div>
                             <div>
                                 <label className="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Appointment Date</label>
                                 <input
-                                    type="date"
+                                    type="datetime-local"
                                     value={appointmentDate}
                                     onChange={(e) => setAppointmentDate(e.target.value)}
                                     required
@@ -220,4 +191,4 @@ export default function EditAppointment() {
             </div>
         </section>
     );
-}      
+}

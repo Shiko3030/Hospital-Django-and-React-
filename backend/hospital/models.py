@@ -1,85 +1,72 @@
 from django.db import models
-import datetime 
-# نموذج الأقسام داخل المستشفى (Form 3)
+
+class Hospital(models.Model):
+    hospital_name = models.CharField(max_length=100, null=False)
+    address = models.CharField(max_length=255, null=True, blank=True)
+    phone_number = models.CharField(max_length=15, null=True, blank=True)
+    email = models.EmailField(max_length=100, null=True, blank=True)
+
+    def __str__(self):
+        return self.hospital_name
+
 class Department(models.Model):
-    name = models.CharField(max_length=100, unique=True)  # اسم القسم
-    bed_count = models.PositiveIntegerField(default=0)  # عدد الأسرّة في القسم
+    department_name = models.CharField(max_length=100, null=False)
+    hospital = models.ForeignKey(Hospital, on_delete=models.CASCADE)
 
     def __str__(self):
-        return self.name  # عرض اسم القسم في الواجهة
+        return self.department_name
 
-# نموذج العاملين (Form 1)
+class JobType(models.Model):
+    job_name = models.CharField(max_length=50, null=False)
+
+    def __str__(self):
+        return self.job_name
+
 class Employee(models.Model):
-    JOB_TYPES = (
-        ('doctor', 'Doctor'),
-        ('nurse', 'Nurse'),
-        ('staff', 'Staff'),
-    )
-    name = models.CharField(max_length=100)  # اسم العامل
-    national_id = models.CharField(max_length=14, unique=True)  # الرقم القومي
-    job_type = models.CharField(max_length=20, choices=JOB_TYPES)  # نوع الوظيفة
-    specialization = models.CharField(max_length=100, blank=True, null=True)  # التخصص (للأطباء فقط)
-    phone = models.CharField(max_length=15)  # رقم الهاتف
-    hire_date = models.DateField()  # تاريخ التعيين
-    department = models.ForeignKey(Department, on_delete=models.SET_NULL, null=True, blank=True)  # القسم التابع له
+    hospital = models.ForeignKey(Hospital, on_delete=models.CASCADE)
+    first_name = models.CharField(max_length=50, null=False)
+    last_name = models.CharField(max_length=50, null=False)
+    specialty = models.CharField(max_length=100, null=True, blank=True)
+    license_number = models.CharField(max_length=50, null=True, blank=True)
+    job = models.ForeignKey(JobType, on_delete=models.CASCADE)
+    department = models.ForeignKey(Department, on_delete=models.CASCADE)
 
-    def __str__(self):
-        return f"{self.name} ({self.job_type})"
-
-# نموذج المرضى (Form 2)
-class Patient(models.Model):
-    name = models.CharField(max_length=100)  # اسم المريض
-    national_id = models.CharField(max_length=14, unique=True)  # الرقم القومي
-    age = models.PositiveIntegerField()  # العمر
-    gender = models.CharField(max_length=10, choices=(('male', 'Male'), ('female', 'Female')))  # الجنس
-    phone = models.CharField(max_length=15)  # رقم الهاتف
-    address = models.TextField()  # العنوان
-    registration_date = models.DateField(auto_now_add=True)  # تاريخ التسجيل (تلقائي)
+    @property
+    def name(self):
+        return f"{self.first_name} {self.last_name}"
 
     def __str__(self):
         return self.name
 
-# نموذج حجز الكشف (Form 4)
-class Appointment(models.Model):
-    APPOINTMENT_TYPES = (
-        ('general', 'General Checkup'),
-        ('cardiology', 'Cardiology'),
-        ('orthopedics', 'Orthopedics'),
-        ('neurology', 'Neurology'),
-        # يمكنك إضافة أنواع أخرى حسب الحاجة
-    )
+class Patient(models.Model):
+    first_name = models.CharField(max_length=50, null=False)
+    last_name = models.CharField(max_length=50, null=False)
+    gender = models.CharField(max_length=10, choices=(('male', 'Male'), ('female', 'Female')), default='male')
+    date_of_birth = models.DateField(null=True, blank=True)
+    phone_number = models.CharField(max_length=15, null=True, blank=True)
+    email = models.EmailField(max_length=100, null=True, blank=True)
+    hospital = models.ForeignKey(Hospital, on_delete=models.CASCADE, default=1)
 
+
+    @property
+    def name(self):
+        return f"{self.first_name} {self.last_name}"
+
+    def __str__(self):
+        return self.name
+
+class Appointment(models.Model):
     STATUS_CHOICES = (
         ('confirmed', 'Confirmed'),
         ('cancelled', 'Cancelled'),
         ('completed', 'Completed'),
     )
-
-    patient = models.ForeignKey(Patient, on_delete=models.CASCADE)  # المريض
-    doctor = models.ForeignKey(Employee, on_delete=models.SET_NULL, null=True, limit_choices_to={'job_type': 'doctor'})  # الطبيب
-    department = models.ForeignKey(Department, on_delete=models.SET_NULL, null=True)  # القسم
-    appointment_type = models.CharField(max_length=50, choices=APPOINTMENT_TYPES)  # نوع الكشف
-    appointment_date = models.DateField()  # تاريخ ووقت الحجز
-    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='confirmed')  # حالة الحجز
-
-    def __str__(self):
-        return f"{self.patient.name} - {self.appointment_type} on {self.appointment_date}"
-
-# نموذج العمليات والإجراءات (Form 5)
-class Operation(models.Model):
-    OPERATION_STATUS = (
-        ('successful', 'Successful'),
-        ('failed', 'Failed'),
-        ('ongoing', 'Ongoing'),
-    )
-
-    patient = models.ForeignKey(Patient, on_delete=models.CASCADE)  # المريض
-    doctor = models.ForeignKey(Employee, on_delete=models.SET_NULL, null=True, limit_choices_to={'job_type': 'doctor'})  # الطبيب المسؤول
-    department = models.ForeignKey(Department, on_delete=models.SET_NULL, null=True)  # القسم
-    operation_type = models.CharField(max_length=100)  # نوع العملية
-    operation_date = models.DateField()  # تاريخ ووقت العملية
-    status = models.CharField(max_length=20, choices=OPERATION_STATUS)  # حالة العملية
-    cost = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)  # تكلفة العملية
+    patient = models.ForeignKey(Patient, on_delete=models.CASCADE)
+    hospital = models.ForeignKey(Hospital, on_delete=models.CASCADE)
+    department = models.ForeignKey(Department, on_delete=models.CASCADE)
+    doctor = models.ForeignKey(Employee, on_delete=models.SET_NULL, null=True, limit_choices_to={'job__job_name__iexact': 'doctor'})
+    appointment_date = models.DateTimeField()
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='confirmed')
 
     def __str__(self):
-        return f"{self.operation_type} for {self.patient.name} on {self.operation_date}"
+        return f"Appointment for {self.patient} on {self.appointment_date}"

@@ -1,17 +1,25 @@
 "use client";
 
-import { Link } from "react-router-dom";
-
+import { Link, useNavigate } from "react-router-dom";
 
 export function Navbar() {
+  const navigate = useNavigate();
+  const isLoggedIn = !!localStorage.getItem('access_token'); // بتحقق إذا كان فيه Token أو لأ
+
+  const handleLogout = () => {
+    localStorage.removeItem('access_token');
+    localStorage.removeItem('refresh_token');
+    navigate('/login');
+  };
+
   return (
     <nav className="bg-white border-gray-200 dark:bg-gray-900">
       <div className="max-w-screen-xl flex flex-wrap items-center justify-between mx-auto p-4">
-        <a href="https://flowbite-react.co" className="flex items-center">
+        <Link to="/hospitals" className="flex items-center">
           <span className="self-center text-2xl font-semibold whitespace-nowrap dark:text-white">
-           Hospital 
+            Hospitals
           </span>
-        </a>
+        </Link>
         <button
           data-collapse-toggle="navbar-default"
           type="button"
@@ -37,46 +45,66 @@ export function Navbar() {
           <ul className="font-medium flex flex-col md:flex-row md:space-x-8 md:mt-0">
             <li>
               <Link to="/">
-                <span   id="nav" className="block    py-2 px-3 text-white bg-blue-700 rounded md:bg-transparent md:text-blue-700">
+                <span id="nav" className="block py-2 px-3 text-white bg-blue-700 rounded md:bg-transparent md:text-blue-700">
                   Home
                 </span>
               </Link>
             </li>
             <li>
               <Link to="/departments">
-                <span   id="nav" className="block   py-2 px-3 text-gray-700 hover:bg-gray-100 md:hover:bg-transparent">
-                Departments
+                <span id="nav" className="block py-2 px-3 text-gray-700 hover:bg-gray-100 md:hover:bg-transparent">
+                  Departments
+                </span>
+              </Link>
+            </li>
+            <li>
+              <Link to="/jobtypes">
+                <span id="nav" className="block py-2 px-3 text-gray-700 hover:bg-gray-100 md:hover:bg-transparent">
+                  JobTypes
                 </span>
               </Link>
             </li>
             <li>
               <Link to="/appointment">
-                <span   id="nav" className="block   py-2 px-3 text-gray-700 hover:bg-gray-100 md:hover:bg-transparent">
-                Appointment
+                <span id="nav" className="block py-2 px-3 text-gray-700 hover:bg-gray-100 md:hover:bg-transparent">
+                  Appointment
                 </span>
               </Link>
             </li>
             <li>
               <Link to="/employee">
-                <span  id="nav"  className="block   py-2 px-3 text-gray-700 hover:bg-gray-100 md:hover:bg-transparent">
-                Employee
+                <span id="nav" className="block py-2 px-3 text-gray-700 hover:bg-gray-100 md:hover:bg-transparent">
+                  Employee
                 </span>
               </Link>
             </li>
             <li>
-              <Link to="/operation">
-                <span   id="nav" className="block   py-2 px-3 text-gray-700 hover:bg-gray-100 md:hover:bg-transparent">
-                Operatione
+              <Link to="/patient">
+                <span id="nav" className="block py-2 px-3 text-gray-700 hover:bg-gray-100 md:hover:bg-transparent">
+                  Pationte
                 </span>
               </Link>
             </li>
-            <li>
-              <Link to="/pationte">
-                <span   id="nav" className="block   py-2 px-3 text-gray-700 hover:bg-gray-100 md:hover:bg-transparent">
-                Pationte
-                </span>
-              </Link>
-            </li>
+            {/* شرط لعرض Logout أو Login بناءً على حالة تسجيل الدخول */}
+            {isLoggedIn ? (
+              <li>
+                <button
+                  onClick={handleLogout}
+                  className="block py-2 px-3 text-gray-700 hover:bg-gray-100 md:hover:bg-transparent"
+                  id="logout"
+                >
+                  Logout
+                </button>
+              </li>
+            ) : (
+              <li>
+                <Link to="/login">
+                  <span id="login" className="block py-2 px-3 text-gray-700 hover:bg-gray-100 md:hover:bg-transparent" >
+                    Login
+                  </span>
+                </Link>
+              </li>
+            )}
           </ul>
         </div>
       </div>

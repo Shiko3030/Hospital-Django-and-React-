@@ -3,33 +3,44 @@ import axios from 'axios';
 import { useNavigate, useParams } from 'react-router-dom';
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+
 export default function UpdateDepartment() {
-    const [name, setName] = useState('');
-    const [bedCount, setBedCount] = useState(0);
+    const [departmentName, setDepartmentName] = useState('');
+    const [hospital, setHospital] = useState('');
+    const [hospitals, setHospitals] = useState([]);
     const { id } = useParams();
     const navigate = useNavigate();
 
     useEffect(() => {
+        // جلب بيانات القسم المحدد
         axios.get(`http://127.0.0.1:8000/api/departments/${id}`)
             .then(response => {
-                setName(response.data.name);
-                setBedCount(response.data.bed_count);
+                setDepartmentName(response.data.department_name);
+                setHospital(response.data.hospital);
                 console.log(response.data);
             })
             .catch(error => console.error('Error fetching department data:', error));
+
+        // جلب قائمة المستشفيات
+        axios.get('http://127.0.0.1:8000/api/hospitals/')
+            .then(response => setHospitals(response.data))
+            .catch(error => console.error('Error fetching hospitals:', error));
     }, [id]);
 
     const handleSubmit = async (e) => {
         e.preventDefault();
         try {
-            await axios.put(`http://127.0.0.1:8000/api/departments/${id}/update/`, { name, bed_count: bedCount });
-                    toast.success("Appointment Deleted Successfully ! 🎉");
-                    setTimeout(() => {
-                        navigate('/appointment');
-                    }, 4000);
+            await axios.put(`http://127.0.0.1:8000/api/departments/${id}/update/`, {
+                department_name: departmentName,
+                hospital
+            });
+            toast.success("Department Updated Successfully! 🎉");
+            setTimeout(() => {
+                navigate('/departments');
+            }, 4000);
         } catch (error) {
-            console.error('Error updating department:', error);
-            alert('Failed to update department. Please try again.');
+            console.error('Error updating department:', error.response?.data || error.message);
+            toast.error(`Failed to update department: ${error.response?.status || 'Unknown error'}`);
         }
     };
 
@@ -41,29 +52,32 @@ export default function UpdateDepartment() {
                 </div>
                 <div>
                     <div className="w-full lg:max-w-xl p-6 space-y-8 sm:p-8 bg-white rounded-lg shadow-xl dark:bg-gray-800">
-                            <ToastContainer />
+                        <ToastContainer />
                         <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Update Department</h2>
                         <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
                             <div>
-                                <label className="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Name</label>
+                                <label className="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Department Name</label>
                                 <input
                                     type="text"
-                                    value={name}
-                                    onChange={(e) => setName(e.target.value)}
+                                    value={departmentName}
+                                    onChange={(e) => setDepartmentName(e.target.value)}
                                     required
                                     className="w-full p-2 border rounded-lg"
                                 />
                             </div>
                             <div>
-                                <label className="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Bed Count</label>
-                                <input
-                                    type="number"
-                                    value={bedCount}
-                                    onChange={(e) => setBedCount(Number(e.target.value))}
-                                    min="0"
+                                <label className="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Hospital</label>
+                                <select
+                                    value={hospital}
+                                    onChange={(e) => setHospital(e.target.value)}
                                     required
                                     className="w-full p-2 border rounded-lg"
-                                />
+                                >
+                                    <option value="">Select a hospital</option>
+                                    {hospitals.map(h => (
+                                        <option key={h.id} value={h.id}>{h.hospital_name}</option>
+                                    ))}
+                                </select>
                             </div>
                             <button
                                 type="submit"

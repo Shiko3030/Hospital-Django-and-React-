@@ -9,18 +9,12 @@ export default function CreateAppointment() {
     const [doctors, setDoctors] = useState([]);
     const [patient, setPatient] = useState('');
     const [doctor, setDoctor] = useState('');
+    const [hospitals, setHospitals] = useState([]);
+    const [hospital, setHospital] = useState('');
     const [department, setDepartment] = useState('');
-    const [appointmentType, setAppointmentType] = useState('');
     const [appointmentDate, setAppointmentDate] = useState('');
-    const [status, setStatus] = useState('');
+    const [status, setStatus] = useState('confirmed'); // Default to 'confirmed'
     const navigate = useNavigate();
-
-    const APPOINTMENT_TYPES = [
-        { value: 'general', label: 'General Checkup' },
-        { value: 'cardiology', label: 'Cardiology' },
-        { value: 'orthopedics', label: 'Orthopedics' },
-        { value: 'neurology', label: 'Neurology' }
-    ];
 
     const STATUS_CHOICES = [
         { value: 'confirmed', label: 'Confirmed' },
@@ -33,6 +27,9 @@ export default function CreateAppointment() {
             .then(response => setPatients(response.data))
             .catch(error => console.error('Error fetching patients:', error));
             
+            axios.get('http://127.0.0.1:8000/api/hospitals/')
+            .then(response => setHospitals(response.data))
+            .catch(error => console.error('Error fetching hospitals:', error));
 
         axios.get('http://127.0.0.1:8000/api/departments/')
             .then(response => setDepartments(response.data))
@@ -49,16 +46,21 @@ export default function CreateAppointment() {
             await axios.post('http://127.0.0.1:8000/api/appointment/create/', {
                 patient,
                 doctor,
+                hospital,
                 department,
-                appointment_type: appointmentType,
                 appointment_date: appointmentDate,
                 status
             });
 
-            toast.success("Appointment Created Successfully ! 🎉");
-
+            toast.success("Appointment Created Successfully! 🎉");
+            setPatient('');
+            setDoctor('');
+            setHospital('');
+            setDepartment('');
+            setAppointmentDate('');
+            setStatus('confirmed');
             setTimeout(() => {
-                navigate('/appointment');
+                navigate('/appointment'); // Fixed typo
             }, 4000);
         } catch (error) {
             console.error('Error creating appointment:', error);
@@ -77,6 +79,20 @@ export default function CreateAppointment() {
                               <ToastContainer />
                         <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Create Appointment</h2>
                         <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
+                        <div>
+                                <label className="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Hospital</label>
+                                <select
+                                    value={hospital}
+                                    onChange={(e) => setHospital(e.target.value)}
+                                    required
+                                    className="w-full p-2 border rounded-lg"
+                                >
+                                    <option value="">Select a hospital</option>
+                                    {hospitals.map(h => (
+                                        <option key={h.id} value={h.id}>{h.hospital_name}</option>
+                                    ))}
+                                </select>
+                            </div>
                             <div>
                                 <label className="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Patient</label>
                                 <select
@@ -87,7 +103,7 @@ export default function CreateAppointment() {
                                 >
                                     <option value="">Select a patient</option>
                                     {patients.map(p => (
-                                        <option key={p.id} value={p.id}>{p.name}</option>
+                                        <option key={p.id} value={p.id}>{`${p.first_name} ${p.last_name}`}</option>
                                     ))}
                                 </select>
                             </div>
@@ -101,7 +117,7 @@ export default function CreateAppointment() {
                                 >
                                     <option value="">Select a doctor</option>
                                     {doctors.map(d => (
-                                        <option key={d.id} value={d.id}>{d.name}</option>
+                                        <option key={d.id} value={d.id}>{`${d.first_name} ${d.last_name}`}</option>
                                     ))}
                                 </select>
                             </div>
@@ -115,28 +131,14 @@ export default function CreateAppointment() {
                                 >
                                     <option value="">Select a department</option>
                                     {departments.map(d => (
-                                        <option key={d.id} value={d.id}>{d.name}</option>
-                                    ))}
-                                </select>
-                            </div>
-                            <div>
-                                <label className="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Appointment Type</label>
-                                <select
-                                    value={appointmentType}
-                                    onChange={(e) => setAppointmentType(e.target.value)}
-                                    required
-                                    className="w-full p-2 border rounded-lg"
-                                >
-                                    <option value="">Select an appointment type</option>
-                                    {APPOINTMENT_TYPES.map(type => (
-                                        <option key={type.value} value={type.value}>{type.label}</option>
+                                        <option key={d.id} value={d.id}>{d.department_name}</option>
                                     ))}
                                 </select>
                             </div>
                             <div>
                                 <label className="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Appointment Date</label>
                                 <input
-                                    type="date"
+                                    type="datetime-local"
                                     value={appointmentDate}
                                     onChange={(e) => setAppointmentDate(e.target.value)}
                                     required

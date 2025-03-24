@@ -1,6 +1,17 @@
 from django.urls import path
 from .views import (
-
+    # Typejope
+     JobType_List,
+     JobType_Get,
+     Create_JobType,
+     Update_JobType,
+     Delete_JobType,
+     # Hospital
+     Hospital_List,
+     Hospital_Get,
+     Create_Hospital,
+     Update_Hospital,
+     Delete_Hospital,
     # Department
     Department_List,
     Department_Get, 
@@ -27,15 +38,22 @@ from .views import (
     Create_Patient,
     Update_Patient,
     Delete_Patient,
-    # Operation_
-    Operation_List,
-    Operation_Get,
-    Create_Operation,
-    Update_Operation,
-    Delete_Operation
 )
 
 urlpatterns = [
+        # JobType URLs
+    path('jobtypes/', JobType_List, name='jobtype-list'),
+    path('jobtypes/<int:pk>/', JobType_Get, name='jobtype-get'),
+    path('jobtypes/create/', Create_JobType, name='create-jobtype'),
+    path('jobtypes/<int:pk>/update/', Update_JobType, name='update-jobtype'),
+    path('jobtypes/<int:pk>/delete/', Delete_JobType, name='delete-jobtype'),
+
+    # Hospital URLs
+    path('hospitals/', Hospital_List, name='hospital-list'),
+    path('hospitals/<int:pk>/', Hospital_Get, name='hospital-get'),
+    path('hospitals/create/', Create_Hospital, name='create-hospital'),
+    path('hospitals/<int:pk>/update/', Update_Hospital, name='update-hospital'),
+    path('hospitals/<int:pk>/delete/', Delete_Hospital, name='delete-hospital'),
     # Department
     path('departments/', Department_List, name='department-list'),
     path('departments/<int:pk>', Department_Get , name='department-get'),
@@ -61,11 +79,5 @@ urlpatterns = [
     path('patient/create/', Create_Patient, name='create-patient'),
     path('patient/<int:pk>/update/', Update_Patient, name='update-patient'),
     path('patient/<int:pk>/delete/', Delete_Patient, name='delete-patient'),
-    # operation
-    path('operation/', Operation_List, name='operation-list'),
-    path('operation/<int:pk>', Operation_Get , name='operation-get'),
-    path('operation/create/', Create_Operation, name='create-operation'),
-    path('operation/<int:pk>/update/', Update_Operation, name='update-operation'),
-    path('operation/<int:pk>/delete/', Delete_Operation, name='delete-operation'),
 
 ]
